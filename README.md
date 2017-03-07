@@ -34,6 +34,9 @@ If you want to install the `xcpretty` gem (see [building from source](#building-
 
 # Installation
 
+The extension can be added to your Xcode XCUITest project by using an dependency manager or by manually including it to 
+the project.
+
 ### Cocoapods
 
 1) Ensure you have installed the `cocoapods` gem:
