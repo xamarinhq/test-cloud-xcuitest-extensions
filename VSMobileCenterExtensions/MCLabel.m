@@ -37,6 +37,16 @@ void _XCINFLog(NSString *msg);
 
 @implementation MCLabel
 
++ (void)initialize {
+    /*
+     XCUITest's internal screenshot mechanism conflicts with our own, so
+     we will disable it.
+     */
+    NSUserDefaults *defs = [NSUserDefaults standardUserDefaults];
+    [defs setBool:YES forKey:@"DisableScreenshots"];
+    [defs synchronize];
+}
+
 + (void)label:(NSString *)fmt, ... {
     va_list args;
     va_start(args, fmt);
