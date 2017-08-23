@@ -57,43 +57,6 @@ void _XCINFLog(NSString *msg);
     [self _label:lbl];
 }
 
-/*
- We add in the prefix and pass it along to XCTest
- */
-+ (void)_label:(NSString *)message {
-    XCTestCase *testCase = [self currentTestCase];
-    if (testCase == nil) {
-        [self labelFailedWithError:@"Unable to locate current test case."
-                      labelMessage:message];
-    } else {
-        /*
-         Declare that we are starting an activity, titled with the user's label.
-         This activity merely captures a screenshot, which is then processed
-         by MobileCenter/XTC.
-         */
-        [testCase startActivityWithTitle:[NSString stringWithFormat:@"%@%@", LABEL_PREFIX, message]
-                                   block:^(XCActivityRecord *activityRecord){
-                                       if (activityRecord == nil) {
-                                           [self labelFailedWithError:@"No XCActivityRecord currently exists."
-                                                         labelMessage:message];
-                                       } else {
-                                           XCAXClient_iOS *client = [XCAXClient_iOS sharedClient];
-                                           if (client == nil) {
-                                               [self labelFailedWithError:@"Unable to fetch Accessibility Client." labelMessage:message];
-                                           } else {
-                                               NSData *screenshotData = [client screenshotData];
-                                               if (screenshotData == nil) {
-                                                   [self labelFailedWithError:@"Unable to fetch screenshot data from Accessibility Client."
-                                                                 labelMessage:message];
-                                               } else {
-                                                   [activityRecord setScreenImageData:screenshotData];
-                                               }
-                                           }
-                                       }
-                                   }];
-    }
-}
-
 + (void)labelFailedWithError:(NSString *)errorMessage labelMessage:(NSString *)labelMessage {
     /*
      These will appear in the Device Log.
@@ -106,6 +69,53 @@ void _XCINFLog(NSString *msg);
      */
     _XCINFLog([NSString stringWithFormat:@"%@ERROR: %@", LABEL_PREFIX, errorMessage]);
     _XCINFLog([NSString stringWithFormat:@"%@ERROR: Unable to process label(\"%@\")", LABEL_PREFIX, labelMessage]);
+}
+
++ (void)attachScreenshotUsingAXClientToActivityRecord:(XCActivityRecord *)activityRecord
+                                             testCase:(XCTestCase *)testCase
+                                              message:(NSString *)message {
+
+    XCAXClient_iOS *client = [XCAXClient_iOS sharedClient];
+    if (client == nil) {
+        [MCLabel labelFailedWithError:@"Unable to fetch Accessibility Client."
+                         labelMessage:message];
+    } else {
+        NSData *screenshotData = [client screenshotData];
+        if (screenshotData == nil) {
+            [MCLabel labelFailedWithError:@"Unable to fetch screenshot data from Accessibility Client."
+                          labelMessage:message];
+        } else {
+            [activityRecord setScreenImageData:screenshotData];
+        }
+    }
+}
+
+/*
+ We add in the prefix and pass it along to XCTest
+ */
++ (void)_label:(NSString *)message {
+    XCTestCase *testCase = [self currentTestCase];
+    if (testCase == nil) {
+        [MCLabel labelFailedWithError:@"Unable to locate current test case."
+                      labelMessage:message];
+    } else {
+        /*
+         Declare that we are starting an activity, titled with the user's label.
+         This activity merely captures a screenshot, which is then processed
+         by MobileCenter/XTC.
+         */
+        [testCase startActivityWithTitle:[NSString stringWithFormat:@"%@%@", LABEL_PREFIX, message]
+                                   block:^(XCActivityRecord *activityRecord) {
+                                       if (activityRecord == nil) {
+                                           [MCLabel labelFailedWithError:@"No XCActivityRecord currently exists."
+                                                            labelMessage:message];
+                                       } else {
+                                           [MCLabel attachScreenshotUsingAXClientToActivityRecord:activityRecord
+                                                                                         testCase:testCase
+                                                                                          message:message];
+                                       }
+                                   }];
+    }
 }
 
 @end
