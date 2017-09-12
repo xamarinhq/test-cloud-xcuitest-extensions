@@ -1,24 +1,23 @@
 
 #import "MCLaunch.h"
 #import <XCTest/XCTest.h>
+#import <objc/runtime.h>
+
 
 @implementation MCLaunch
 
 + (XCUIApplication *)launch {
     XCUIApplication *application = [[XCUIApplication alloc] init];
-    [MCLaunch turnOffAutomationSession:application];
     [application launch];
     return application;
 }
 
 + (XCUIApplication *)launchApplication:(XCUIApplication *)application {
-    [MCLaunch turnOffAutomationSession:application];
     [application launch];
     return application;
 }
 
 + (id)XCUIApplicationImpl:(XCUIApplication *)application {
-
     Class klass = [application class];
     SEL selector = NSSelectorFromString(@"applicationImpl");
 
@@ -97,6 +96,53 @@ setSupportAutomationSession:(BOOL)value {
     } else {
         return XCUIApplicationStateUnknown;
     }
+}
+
+@end
+
+typedef void (*OriginalLaunchImpType)(id self, SEL selector);
+static OriginalLaunchImpType originalLaunchImp;
+
+@interface XCUIApplication (MobileCenterAdditions)
+
+- (void)swizzled_launch;
+
+@end
+
+@implementation XCUIApplication (MobileCenterAdditions)
+
++ (void)load {
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        Class klass = [self class];
+
+        SEL originalSelector = NSSelectorFromString(@"launch");
+        SEL swizzledSelector = NSSelectorFromString(@"swizzled_launch");
+
+        Method originalMethod = class_getInstanceMethod(klass, originalSelector);
+        originalLaunchImp = (OriginalLaunchImpType)method_getImplementation(originalMethod);
+        Method swizzledMethod = class_getInstanceMethod(klass, swizzledSelector);
+
+        BOOL didAddMethod =
+        class_addMethod(klass,
+                        originalSelector,
+                        method_getImplementation(swizzledMethod),
+                        method_getTypeEncoding(swizzledMethod));
+
+        if (didAddMethod) {
+            class_replaceMethod(klass,
+                                swizzledSelector,
+                                method_getImplementation(originalMethod),
+                                method_getTypeEncoding(originalMethod));
+        } else {
+            method_exchangeImplementations(originalMethod, swizzledMethod);
+        }
+    });
+}
+
+- (void)swizzled_launch {
+    [MCLaunch turnOffAutomationSession:self];
+    originalLaunchImp(self, @selector(launch));
 }
 
 @end
