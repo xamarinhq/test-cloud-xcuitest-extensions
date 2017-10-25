@@ -72,4 +72,17 @@
     [application terminate];
 }
 
+- (void)testLaunchMethodIsSwizzled {
+    XCUIApplication *application = [[XCUIApplication alloc] init];
+    XCTAssertNotNil(application);
+
+    [application launch];
+
+    XCUIApplicationState state = [MCLaunch stateForApplication:application];
+    XCTAssertFalse(state == XCUIApplicationStateUnknown);
+
+    label(@"XCUIApplication#launch was swizzled");
+    [application terminate];
+}
+
 @end

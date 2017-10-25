@@ -27,24 +27,6 @@ your test methods.
 * Sierra or High Sierra
 * iOS >= 9.0
 
-When using Xcode 9.0, you must launch your application using our
-`MCLaunch` API.
-
-```
-### Objective-C
-
-XCUIApplication *app = mc_launch
-XCUIApplication *app = mc_launch_app([[XCUIApplication alloc] init]);
-
-XCUIApplication *app = [MCLaunch launch];
-XCUIApplication *app = [MCLaunch launchApplication:[[XCUIApplication alloc] init]];
-
-### Swift
-
-let app = MCLaunch.launch();
-let app = MCLaunch.launch(XCUIApplication())
-```
-
 ### Installation
 
 The extension can be added to your Xcode project using Cocoapods, Carthage,
